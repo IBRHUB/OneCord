@@ -31,6 +31,22 @@ function Write-Warn { param([string]$Text) Write-Host "  WARN $Text" -Foreground
 function Write-Bad  { param([string]$Text) Write-Host "  FAIL $Text" -ForegroundColor Red }
 function Write-Note { param([string]$Text) Write-Host "  $Text" -ForegroundColor DarkGray }
 
+function Write-StatusLine {
+    param(
+        [ValidateSet('OK', 'WARN', 'FAIL')]
+        [string]$Level,
+
+        [string]$Label,
+        [string]$Value
+    )
+
+    $levelColor = if ($Level -eq 'OK') { 'Green' } else { 'Yellow' }
+
+    Write-Host -NoNewline ($Level.PadRight(4) + '  ') -ForegroundColor $levelColor
+    Write-Host -NoNewline $Label.PadRight(15) -ForegroundColor White
+    Write-Host $Value -ForegroundColor DarkGray
+}
+
 function Write-MenuLine {
     param(
         [string]$LeftText,
@@ -79,7 +95,7 @@ function Pause-Key {
     param([string]$Message = 'Press any key to continue...')
 
     Write-Host ''
-    Write-Host "  $Message" -NoNewline -ForegroundColor DarkGray
+    Write-Host $Message -NoNewline -ForegroundColor DarkGray
     [void][System.Console]::ReadKey($true)
 }
 
@@ -558,10 +574,6 @@ function Repair-DroverConfig {
 
     Set-DroverProxyConfig -IniPath $drover.LatestIniPath
 
-    if (-not $Quiet) {
-        Write-Ok "Drover proxy set to $DroverProxy"
-    }
-
     return $true
 }
 
@@ -584,80 +596,71 @@ function Show-Status {
     param($State)
 
     Write-Host ''
-    Write-Host '  Discord WARP Route' -ForegroundColor Cyan
-    Write-Host '  ------------------' -ForegroundColor DarkGray
+    Write-Host 'Discord WARP Route' -ForegroundColor White
+    Write-Host '------------------' -ForegroundColor DarkGray
+    Write-Host ''
 
     if ($State.NrptActive) {
-        Write-Ok "DNS rules active ($(@($State.NrptRules).Count))"
+        Write-StatusLine -Level 'OK' -Label 'DNS rules' -Value 'active'
     }
     else {
-        Write-Warn 'DNS rules inactive'
+        Write-StatusLine -Level 'WARN' -Label 'DNS rules' -Value 'inactive'
     }
 
     if (-not $State.Warp.Installed) {
-        Write-Bad 'WARP not installed'
+        Write-StatusLine -Level 'FAIL' -Label 'WARP' -Value 'not installed'
     }
     elseif ($State.Warp.Connected) {
-        Write-Ok 'WARP connected'
+        Write-StatusLine -Level 'OK' -Label 'WARP' -Value 'connected'
     }
     else {
-        Write-Warn 'WARP not connected'
+        Write-StatusLine -Level 'WARN' -Label 'WARP' -Value 'not connected'
     }
 
-    if ($State.Warp.Installed -and $State.Warp.ProxyPort) {
-        if ($State.Warp.ProxyPort -eq $ProxyPort) {
-            Write-Ok "WARP proxy port is $ProxyPort"
-        }
-        else {
-            Write-Warn "WARP proxy port is $($State.Warp.ProxyPort), expected $ProxyPort"
-        }
+    if (-not $State.Warp.Installed) {
+        Write-StatusLine -Level 'WARN' -Label 'Proxy' -Value 'unavailable'
     }
-    elseif ($State.Warp.Installed) {
-        Write-Warn "WARP proxy port was not detected"
+    elseif ($State.Warp.ProxyListening) {
+        Write-StatusLine -Level 'OK' -Label 'Proxy' -Value "$ProxyHost`:$ProxyPort"
     }
-
-    if ($State.Warp.Installed) {
-        if ($State.Warp.ProxyListening) {
-            Write-Ok "Local proxy is listening on $($ProxyHost):$ProxyPort"
-        }
-        else {
-            Write-Warn "Local proxy is not listening on $($ProxyHost):$ProxyPort"
-        }
+    elseif ($State.Warp.ProxyPort -and $State.Warp.ProxyPort -ne $ProxyPort) {
+        Write-StatusLine -Level 'WARN' -Label 'Proxy' -Value "port $($State.Warp.ProxyPort)"
+    }
+    else {
+        Write-StatusLine -Level 'WARN' -Label 'Proxy' -Value 'not listening'
     }
 
     if ($State.Drover.Loaded) {
-        Write-Ok 'Drover loaded inside Discord'
+        Write-StatusLine -Level 'OK' -Label 'Drover' -Value 'loaded'
     }
     elseif ($State.Drover.InstalledInLatest -and $State.DiscordRunning) {
-        Write-Warn 'Drover installed but not loaded. Restart Discord.'
+        Write-StatusLine -Level 'WARN' -Label 'Drover' -Value 'restart Discord'
     }
     elseif ($State.Drover.InstalledInLatest) {
-        Write-Warn 'Drover installed. Start Discord to load it.'
+        Write-StatusLine -Level 'WARN' -Label 'Drover' -Value 'open Drover and install (SOCKS5)'
     }
     elseif ($State.Drover.Installed) {
-        Write-Warn 'Drover exists in an older Discord folder. Reinstall it after Discord update.'
+        Write-StatusLine -Level 'WARN' -Label 'Drover' -Value 'reinstall after update'
     }
     else {
-        Write-Warn 'Drover not installed'
-    }
-
-    if ($State.Drover.InstalledInLatest) {
-        if ($State.Drover.ConfigProxy -eq $DroverProxy) {
-            Write-Ok "Drover proxy is $DroverProxy"
-        }
-        elseif ($State.Drover.ConfigProxy) {
-            Write-Warn "Drover proxy is $($State.Drover.ConfigProxy), expected $DroverProxy"
-        }
-        else {
-            Write-Warn 'Drover proxy is not configured'
-        }
+        Write-StatusLine -Level 'WARN' -Label 'Drover' -Value 'not installed'
     }
 
     if ($State.DiscordRunning) {
-        Write-Ok 'Discord is running'
+        Write-StatusLine -Level 'OK' -Label 'Discord' -Value 'running'
     }
     else {
-        Write-Note 'Discord is closed'
+        Write-StatusLine -Level 'WARN' -Label 'Discord' -Value 'closed'
+    }
+
+    if ($State.Drover.ConfigProxy -eq $DroverProxy) {
+        Write-StatusLine -Level 'OK' -Label 'Route' -Value $DroverProxy
+    }
+    elseif ($State.Drover.ConfigProxy) {
+        Write-StatusLine -Level 'WARN' -Label 'Route' -Value $State.Drover.ConfigProxy
+    }
+    else {
+        Write-StatusLine -Level 'WARN' -Label 'Route' -Value 'not configured'
     }
 
     Write-Host ''
@@ -666,47 +669,47 @@ function Show-Status {
 function Show-Hints {
     param($State)
 
-    $shown = $false
+    $hints = New-Object 'System.Collections.Generic.List[object]'
 
     if (-not $State.Warp.Installed) {
-        Write-Note 'Install Cloudflare WARP first: https://1.1.1.1'
-        $shown = $true
+        $hints.Add([pscustomobject]@{ Kind = 'Text'; Text = 'Install WARP: https://1.1.1.1'; Color = 'Yellow' })
     }
     elseif (-not $State.Warp.Connected -or -not $State.Warp.ProxyListening) {
-        Write-Note "Open WARP once if it is not registered, then run: .\Discord-WARP-Drover.ps1 Enable"
-        $shown = $true
+        $hints.Add([pscustomobject]@{ Kind = 'Text'; Text = 'Register WARP then run Enable'; Color = 'Yellow' })
     }
 
     if (-not $State.Drover.InstalledInLatest) {
-        Write-Note 'Install Drover into the latest Discord app folder, then run RepairDrover.'
-        Write-Note 'Drover: https://github.com/hdrover/discord-drover/releases/latest'
-        $shown = $true
+        $hints.Add([pscustomobject]@{ Kind = 'DroverInstall' })
     }
     elseif ($State.Drover.ConfigProxy -ne $DroverProxy) {
-        Write-Note "Run RepairDrover to set Drover to $DroverProxy"
-        $shown = $true
+        $hints.Add([pscustomobject]@{ Kind = 'Text'; Text = 'Run RepairDrover'; Color = 'Yellow' })
     }
 
-    if ($shown) { Write-Host '' }
+    if ($hints.Count -eq 0) { return }
+
+    Write-Host ''
+    foreach ($hint in $hints) {
+        switch ($hint.Kind) {
+            'DroverInstall' {
+                Write-Host -NoNewline 'Install Drover → RepairDrover | ' -ForegroundColor Yellow
+                Write-Host 'https://github.com/hdrover/discord-drover/releases/latest' -ForegroundColor Gray
+            }
+            default {
+                Write-Host $hint.Text -ForegroundColor $hint.Color
+            }
+        }
+    }
 }
 
 function Enable-Setup {
-    Write-Host ''
-    Write-Note 'Applying Discord DNS rules...'
     Set-DiscordNrptRules
-    Write-Ok "DNS rules refreshed for $(@($Domains).Count) domains"
 
     if (Get-WarpCliPath) {
-        Write-Note "Setting WARP local proxy to $($ProxyHost):$ProxyPort..."
-
         [void](Try-WarpCommandLines -CommandLines @('mode proxy', 'set-mode proxy'))
         [void](Try-WarpCommandLines -CommandLines @("proxy port $ProxyPort", "set-proxy-port $ProxyPort"))
         [void](Try-WarpCommandLines -CommandLines @('connect'))
 
         Start-Sleep -Seconds 2
-    }
-    else {
-        Write-Warn 'WARP is not installed. DNS rules were applied only.'
     }
 
     [void](Repair-DroverConfig -Quiet)
@@ -717,26 +720,13 @@ function Enable-Setup {
 }
 
 function Disable-Setup {
-    Write-Host ''
-
-    $removed = Remove-DiscordNrptRules
-    if ($removed -gt 0) {
-        Write-Ok "Removed $removed DNS rule(s)"
-    }
-    else {
-        Write-Note 'No DNS rules to remove'
-    }
+    [void](Remove-DiscordNrptRules)
 
     if (-not $KeepWarpConnectedOnDisable -and (Get-WarpCliPath)) {
         [void](Try-WarpCommandLines -CommandLines @('disconnect'))
         [void](Try-WarpCommandLines -CommandLines @('mode warp', 'set-mode warp'))
-        Write-Ok 'WARP returned to normal mode'
-    }
-    elseif ($KeepWarpConnectedOnDisable) {
-        Write-Note 'WARP was left untouched'
     }
 
-    Write-Note 'To fully remove Drover, open drover.exe and click Uninstall.'
     Show-Status -State (Get-CurrentState)
 }
 
@@ -758,8 +748,12 @@ function Invoke-MenuAction {
             return $true
         }
         'RepairDrover' {
-            [void](Repair-DroverConfig)
+            $repaired = Repair-DroverConfig
             Show-Status -State (Get-CurrentState)
+            if ($repaired) {
+                Write-Host ''
+                Write-Host "Drover proxy set to $DroverProxy" -ForegroundColor Yellow
+            }
             return $true
         }
         'Exit' {

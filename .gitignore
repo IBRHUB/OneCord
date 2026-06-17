@@ -1,0 +1,114 @@
+# --- Editor and IDE ---
+.cursor/
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+
+# --- Windows ---
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# --- Secrets and local config ---
+.env
+.env.*
+!.env.example
+*.pfx
+*.key
+*.pem
+credentials.json
+secrets.json
+appsettings.*.local.json
+
+# --- Logs, transcripts, dumps ---
+*.log
+*.dmp
+*.stackdump
+Transcript_*.txt
+
+# --- .NET ---
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]eleases/
+publish/
+**/bin/**/[Rr]elease/
+**/obj/**/[Rr]elease/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.pdb
+*.cache
+*.nupkg
+*.snupkg
+
+# --- Delphi ---
+*.dcu
+*.dcp
+*.local
+*.identcache
+*.tvsconfig
+*.dsk
+Win64/
+Win32/
+
+# --- CMake / C++ native ---
+native/build/
+native/out/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.vcxproj
+*.vcxproj.filters
+*.sln
+*.tlog
+*.obj
+*.lib
+*.exp
+*.ilk
+*.idb
+*.ipdb
+*.iobj
+_deps/
+
+# --- Build output (keep placeholders) ---
+src/dist/*
+!src/dist/.gitkeep
+src/release/*
+!src/release/.gitkeep
+!src/release/gui.ps1
+src/release.zip
+
+# --- Archives and installers produced locally ---
+*.msi
+*.zip
+!src/assets/*.bin
+
+# --- Node (if added later) ---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --- Package managers ---
+packages/
+!**/packages/build/
+
+# --- OS / misc ---
+*.tmp
+*.temp
+*.swp
+*~
+.DS_Store

@@ -1,90 +1,82 @@
-# OneCord Discord WARP Route
+# OneCord
 
-This project makes Discord use Cloudflare WARP local proxy without routing the whole PC through WARP
+Route Discord desktop traffic through Cloudflare WARP local proxy without sending your whole PC through WARP
 
 ## What it does
 
-- Adds NRPT DNS rules for Discord domains to Cloudflare DNS
-- Sets Cloudflare WARP to local proxy mode on `127.0.0.1:1080`
-- Checks whether the proxy port is actually listening
-- Checks whether Drover is installed in the latest Discord app folder
-- Fixes `drover.ini` to use `socks5://127.0.0.1:1080`
-- Shows a clean status instead of claiming success too early
+- Adds NRPT DNS rules so Discord domains resolve via Cloudflare DNS (`1.1.1.1`, `1.0.0.1`)
+- Configures WARP local proxy mode on `127.0.0.1:1080`
+- Verifies the proxy port is listening before reporting success
+- Checks whether the proxy hook is installed in the latest Discord `app-*` folder
+- Writes `onecord.ini` with `socks5://127.0.0.1:1080`
+- Reports real status instead of claiming success too early
 
 ## Requirements
 
+| Requirement | Details |
+| ----------- | ------- |
+| OS | Windows 10 or 11 |
+| PowerShell | 5.1 or newer |
+| Privileges | Run as Administrator (needed for DNS NRPT rules) |
+| Cloudflare WARP | Installed and registered; `warp-cli` on PATH |
+| Discord | Desktop app (stable) |
+| Proxy hook | Build from [`src/`](src/) with `package.ps1` |
 
-| Requirement         | Details                                                        |
-| ------------------- | -------------------------------------------------------------- |
-| **OS**              | Windows 10 or 11                                               |
-| **PowerShell**      | 5.1 or newer                                                   |
-| **Privileges**      | Run as **Administrator** (needed for DNS NRPT rules)           |
-| **Cloudflare WARP** | Must be installed and registered; `warp-cli` available in PATH |
-| **Discord**         | Desktop app installed (stable release)                         |
-| **Drover**          | Installed into the latest Discord `app-`* folder               |
+## Repository layout
 
+```
+OneCord/
+  OneCord.ps1     WARP route manager (menu, enable, disable, status, repair)
+  README.md
+  src/
+    package.ps1   Build installer and proxy DLL
+    installer/    C# WinForms installer
+    native/       Optional experimental C++ hook DLL
+    assets/       onecord.ini and packet template
+    dist/         Build output (generated, not committed)
+```
 
-### Download links
+## Quick start
 
+1. Install [Cloudflare WARP](https://1.1.1.1) and open it once so the client registers
+2. Install [Discord](https://discord.com/download) if needed
+3. Build the proxy package:
 
-| Software            | Link                                                                                                                   |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| **Cloudflare WARP** | [https://1.1.1.1](https://1.1.1.1)                                                                                     |
-| **Discord**         | [https://discord.com/download](https://discord.com/download)                                                           |
-| **Drover**          | [https://github.com/hdrover/discord-drover/releases/latest](https://github.com/hdrover/discord-drover/releases/latest) |
+   ```powershell
+   cd src
+   .\package.ps1
+   ```
 
-
-### Setup order
-
-1. Install [Cloudflare WARP](https://1.1.1.1) and open it once so the client is registered
-2. Install [Discord](https://discord.com/download) if it is not already installed
-3. Download [Drover](https://github.com/hdrover/discord-drover/releases/latest), run `drover.exe`, and install it into Discord
-4. Run `OneCord.ps1` as Administrator and choose **Enable Discord WARP route**
-5. Restart Discord after Drover config changes so `version.dll` loads
+4. Run `src\dist\Installer.exe` and install the proxy into Discord (see [`src/README.md`](src/README.md))
+5. Run `OneCord.ps1` as Administrator and choose **Enable Discord WARP route**
+6. Restart Discord after proxy changes so `version.dll` loads
 
 ## Usage
 
-### Run directly from GitHub
+### Run from GitHub
 
-Open **PowerShell as Administrator**, then run:
+Open PowerShell as Administrator:
 
 ```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/IBRHUB/OneCord/main/OneCord.ps1")))
 ```
 
-- 
+Actions:
 
 ```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/IBRHUB/OneCord/main/OneCord.ps1"))) Enable
-```
-
-- 
-
-```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/IBRHUB/OneCord/main/OneCord.ps1"))) Status
-```
-
-- 
-
-```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/IBRHUB/OneCord/main/OneCord.ps1"))) RepairDrover
-```
-
-- 
-
-```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/IBRHUB/OneCord/main/OneCord.ps1"))) Disable
 ```
 
-Disable without touching WARP:
+Disable without disconnecting WARP:
 
 ```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/IBRHUB/OneCord/main/OneCord.ps1"))) Disable -KeepWarpConnectedOnDisable
 ```
 
 ### Run from a local clone
-
-Run PowerShell as Administrator from this folder
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass -Force
@@ -98,19 +90,14 @@ Direct actions:
 .\OneCord.ps1 Status
 .\OneCord.ps1 RepairDrover
 .\OneCord.ps1 Disable
-```
-
-Disable without touching WARP :
-
-```powershell
 .\OneCord.ps1 Disable -KeepWarpConnectedOnDisable
 ```
 
+Override the default proxy port with `-ProxyPort` if needed
+
 ## Notes
 
-- Default WARP proxy port is `1080`. Override with `-ProxyPort` if needed
-- DNS rules use Cloudflare DNS (`1.1.1.1`, `1.0.0.1`) for Discord domains only
-- After a Discord update, reinstall Drover into the new `app-*` folder and run `RepairDrover`
-- To fully remove Drover, open `drover.exe` and click **Uninstall**
-- This is not a guaranteed ping fix. It is useful when Discord improves with WARP, but you do not want WARP to affect every app on the PC
-
+- DNS rules apply to Discord domains only, not your whole system
+- After a Discord update, reinstall the proxy into the new `app-*` folder and run `RepairDrover`
+- To remove the proxy, run `src\dist\Installer.exe` and click **Remove from Discord**
+- This is not a guaranteed latency fix. It helps when Discord works better through WARP but you do not want WARP for every app

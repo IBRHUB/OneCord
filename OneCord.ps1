@@ -40,7 +40,7 @@ $OneCordAppData    = Join-Path $env:APPDATA 'OneCord'
 $DroverCacheDir    = Join-Path $OneCordAppData 'drover'
 $RepairLogPath     = Join-Path $OneCordAppData 'repair.log'
 $InstallLogPath    = Join-Path $OneCordAppData 'install.log'
-$ScheduledTaskName = 'OneCord-DroverRepair'
+$ScheduledTaskName = 'OneCord-Repair'
 $DroverManualUrl   = 'https://github.com/hdrover/discord-drover/releases'
 
 $Text = @{

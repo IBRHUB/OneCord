@@ -1,0 +1,17 @@
+# Build output
+dist/*
+!dist/.gitkeep
+release/*
+!release/.gitkeep
+!release/gui.ps1
+release.zip
+
+# .NET installer
+installer/bin/
+installer/obj/
+installer/publish/
+installer/Win64/
+
+# Native hook DLL
+native/build/
+native/out/

@@ -63,10 +63,27 @@ Open PowerShell as Administrator:
 
 Actions:
 
+#### Enable
+
 ```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/IBRHUB/OneCord/main/OneCord.ps1"))) Enable
+```
+
+#### Status
+
+```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/IBRHUB/OneCord/main/OneCord.ps1"))) Status
+```
+
+#### RepairDrover
+
+```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/IBRHUB/OneCord/main/OneCord.ps1"))) RepairDrover
+```
+
+#### Disable
+
+```powershell
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/IBRHUB/OneCord/main/OneCord.ps1"))) Disable
 ```
 
@@ -85,11 +102,33 @@ Set-ExecutionPolicy -Scope Process Bypass -Force
 
 Direct actions:
 
+#### Enable
+
 ```powershell
 .\OneCord.ps1 Enable
+```
+
+#### Status
+
+```powershell
 .\OneCord.ps1 Status
+```
+
+#### RepairDrover
+
+```powershell
 .\OneCord.ps1 RepairDrover
+```
+
+#### Disable
+
+```powershell
 .\OneCord.ps1 Disable
+```
+
+Disable without disconnecting WARP:
+
+```powershell
 .\OneCord.ps1 Disable -KeepWarpConnectedOnDisable
 ```
 
